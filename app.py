@@ -98,3 +98,103 @@ CUSTOM_CSS = """
 :root {
     --bg-primary: #0d1117;
     --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --bg-card: rgba(22, 27, 34, 0.85);
+    --border-color: #30363d;
+    --border-subtle: #21262d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+    --accent: #58a6ff;
+    --accent-muted: #1f6feb;
+    --accent-subtle: rgba(56, 139, 253, 0.1);
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+}
+
+html, body, [class*="css"], .stMarkdown, .stText, p, span, li, a {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-primary);
+}
+
+.stApp {
+    background-color: var(--bg-primary);
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+}
+
+section[data-testid="stSidebar"] .stTextInput input {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.88em;
+    padding: 10px 14px;
+    transition: border-color 0.2s ease;
+}
+
+section[data-testid="stSidebar"] .stTextInput input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+section[data-testid="stSidebar"] .stTextInput label {
+    font-size: 0.82em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Summary Card */
+.summary-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--purple), var(--accent));
+    opacity: 0.7;
+}
+
+.summary-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.summary-card .card-title {
+    color: var(--text-primary);
+    font-size: 1em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.summary-card .card-body {
+    color: var(--text-primary);
+    font-size: 0.95em;
+    line-height: 1.65;
+    margin-bottom: 18px;
+}
+
+.summary-card .meta-grid {
+    display: grid;
