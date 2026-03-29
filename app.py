@@ -198,3 +198,103 @@ section[data-testid="stSidebar"] .stTextInput label {
 
 .summary-card .meta-grid {
     display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.summary-card .meta-item {
+    padding: 0;
+}
+
+.summary-card .meta-label {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.summary-card .meta-value {
+    color: var(--text-secondary);
+    font-size: 0.88em;
+    line-height: 1.5;
+}
+
+/* Tech Badge */
+.tech-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--accent-subtle);
+    color: var(--accent);
+    border: 1px solid rgba(56, 139, 253, 0.2);
+    border-radius: 6px;
+    padding: 3px 10px;
+    margin: 2px 3px;
+    font-size: 0.78em;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+/* Source Chip */
+.source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin: 2px 3px;
+    font-size: 0.73em;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.02em;
+}
+
+/* Complexity badges */
+.complexity-small {
+    color: var(--green);
+    font-weight: 600;
+    background: rgba(63, 185, 80, 0.1);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.82em;
+}
+.complexity-medium {
+    color: var(--orange);
+    font-weight: 600;
+    background: rgba(210, 153, 34, 0.1);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.82em;
+}
+.complexity-large {
+    color: var(--red);
+    font-weight: 600;
+    background: rgba(248, 81, 73, 0.1);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.82em;
+}
+
+/* Stat Box */
+.stat-box {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.stat-box .stat-number {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+}
+
+.stat-box .stat-label {
+    font-size: 0.72em;
+    color: var(--text-muted);
