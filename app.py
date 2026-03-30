@@ -548,3 +548,103 @@ def _priority_key(path: str) -> int:
         return 1
     if path.startswith("app/") or path.startswith("lib/") or path.startswith("pages/"):
         return 2
+    return depth + 3
+
+
+def fetch_repo_files(owner: str, repo: str):
+    """
+    Fetch file list from GitHub using the Git Trees API (recursive).
+    Returns list of dicts: {path, content, size, language}.
+    """
+    tree_url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/HEAD?recursive=1"
+    headers = {"Accept": "application/vnd.github.v3+json"}
+
+    resp = requests.get(tree_url, headers=headers, timeout=15)
+
+    if resp.status_code == 404:
+        raise ValueError(
+            "Repository not found. Make sure the URL is correct and the repo is public."
+        )
+    if resp.status_code == 403:
+        remaining = resp.headers.get("X-RateLimit-Remaining", "?")
+        if remaining == "0":
+            raise ValueError("GitHub rate limit reached. Please try again in 60 seconds.")
+        raise ValueError("Access forbidden — the repository may be private.")
+    if resp.status_code != 200:
+        raise ValueError(f"GitHub API error (HTTP {resp.status_code}).")
+
+    tree = resp.json().get("tree", [])
+
+    # Filter blobs matching our criteria
+    candidates = [
+        node for node in tree
+        if node["type"] == "blob"
+        and _should_include(node["path"])
+        and node.get("size", 0) <= MAX_FILE_SIZE
+    ]
+
+    # Sort by priority and cap
+    candidates.sort(key=lambda n: _priority_key(n["path"]))
+    candidates = candidates[:MAX_FILES]
+
+    files = []
+    progress_bar = st.progress(0, text="Fetching repository files...")
+    total = len(candidates)
+
+    for idx, node in enumerate(candidates):
+        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{node['path']}"
+        try:
+            r = requests.get(raw_url, timeout=10)
+            if r.status_code == 200:
+                ext = PurePosixPath(node["path"]).suffix.lower()
+                files.append({
+                    "path": node["path"],
+                    "filename": PurePosixPath(node["path"]).name,
+                    "content": r.text,
+                    "size": node.get("size", len(r.text)),
+                    "language": EXT_TO_LANG.get(ext, "Unknown"),
+                })
+        except requests.RequestException:
+            pass
+        progress_bar.progress((idx + 1) / total, text=f"Fetching {node['path']}")
+
+    progress_bar.empty()
+
+    if not files:
+        raise ValueError("No supported source files found in this repository.")
+
+    return files
+
+
+# ──────────────────────────────────────────────
+# Repo analysis & summary
+# ──────────────────────────────────────────────
+
+def analyse_repo(files: list) -> dict:
+    """Build metadata from fetched files."""
+    lang_counter = Counter(f["language"] for f in files if f["language"] != "Unknown")
+    top_dirs = sorted({PurePosixPath(f["path"]).parts[0] for f in files if "/" in f["path"]})
+    root_files = [f["filename"] for f in files if "/" not in f["path"]]
+
+    # Detect tech stack from known manifest files
+    tech_stack = set(lang_counter.keys())
+    for f in files:
+        if f["filename"] == "package.json":
+            try:
+                pkg = json.loads(f["content"])
+                deps = list(pkg.get("dependencies", {}).keys()) + list(pkg.get("devDependencies", {}).keys())
+                for d in deps:
+                    dl = d.lower()
+                    if "react" in dl:
+                        tech_stack.add("React")
+                    if "next" in dl:
+                        tech_stack.add("Next.js")
+                    if "vue" in dl:
+                        tech_stack.add("Vue")
+                    if "express" in dl:
+                        tech_stack.add("Express")
+                    if "tailwind" in dl:
+                        tech_stack.add("Tailwind CSS")
+                    if "vite" in dl:
+                        tech_stack.add("Vite")
+                    if "angular" in dl:
