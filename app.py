@@ -448,3 +448,103 @@ code, .stCodeBlock {
     color: var(--text-secondary);
     font-weight: 500;
     margin-bottom: 8px;
+}
+
+.welcome-state .welcome-sub {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Divider */
+.subtle-divider {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 16px 0;
+}
+
+/* Footer */
+.sidebar-footer {
+    color: var(--text-muted);
+    font-size: 0.7em;
+    text-align: center;
+    opacity: 0.6;
+    letter-spacing: 0.03em;
+}
+
+/* Quick action specific */
+.qa-btn-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+</style>
+"""
+
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+# ──────────────────────────────────────────────
+# Session state init
+# ──────────────────────────────────────────────
+
+def _init_state():
+    defaults = {
+        "files": [],
+        "repo_meta": {},
+        "summary": "",
+        "vectorstore": None,
+        "chat_history": [],
+        "repo_loaded": False,
+        "loading": False,
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+
+_init_state()
+
+
+# ──────────────────────────────────────────────
+# GitHub helpers
+# ──────────────────────────────────────────────
+
+def parse_repo_url(url: str):
+    """Extract owner/repo from a GitHub URL. Returns (owner, repo) or None."""
+    url = url.strip().rstrip("/")
+    patterns = [
+        r"github\.com/([^/]+)/([^/]+?)(?:\.git)?$",
+        r"^([^/]+)/([^/]+)$",
+    ]
+    for pat in patterns:
+        m = re.search(pat, url)
+        if m:
+            return m.group(1), m.group(2)
+    return None
+
+
+def _should_include(path: str) -> bool:
+    """Check if a file path should be included based on extension and directory rules."""
+    parts = PurePosixPath(path).parts
+    for part in parts:
+        if part in SKIP_DIRS:
+            return False
+    basename = PurePosixPath(path).name
+    if basename in ALLOWED_BASENAMES:
+        return True
+    ext = PurePosixPath(path).suffix.lower()
+    return ext in ALLOWED_EXTENSIONS
+
+
+def _priority_key(path: str) -> int:
+    """Lower value = higher priority. Root and src/ files first."""
+    depth = path.count("/")
+    if depth == 0:
+        return 0
+    if path.startswith("src/"):
+        return 1
+    if path.startswith("app/") or path.startswith("lib/") or path.startswith("pages/"):
+        return 2
