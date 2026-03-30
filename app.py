@@ -298,3 +298,153 @@ section[data-testid="stSidebar"] .stTextInput label {
 .stat-box .stat-label {
     font-size: 0.72em;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+}
+
+/* Language item */
+.lang-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 0.85em;
+}
+
+.lang-name {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.lang-count {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Chat messages */
+div[data-testid="stChatMessage"] {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.01em;
+}
+
+.stButton > button:hover {
+    background-color: var(--accent-muted);
+    border-color: var(--accent);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(31, 111, 235, 0.25);
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+}
+
+/* Code blocks */
+code, .stCodeBlock {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Title area */
+.title-area {
+    text-align: center;
+    padding: 16px 0 8px 0;
+}
+
+.title-area .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.title-area h1 {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    font-size: 1.8em;
+    margin: 0;
+    letter-spacing: -0.03em;
+}
+
+.title-area .subtitle {
+    color: var(--text-muted);
+    font-size: 0.88em;
+    font-weight: 400;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+}
+
+/* Sidebar branding */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.sidebar-brand .brand-name {
+    font-size: 1.15em;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.sidebar-brand .brand-sub {
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin-top: 2px;
+}
+
+/* Section headers */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.section-header .section-title {
+    font-size: 0.88em;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* Welcome state */
+.welcome-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.welcome-state .welcome-icon {
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.welcome-state .welcome-title {
+    font-size: 1.05em;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 8px;
