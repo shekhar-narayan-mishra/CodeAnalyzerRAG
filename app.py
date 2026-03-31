@@ -748,3 +748,103 @@ def get_embeddings():
     return HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2",
         model_kwargs={"device": "cpu"},
+    )
+
+
+def build_vectorstore(files: list):
+    """Chunk files and build a FAISS vectorstore."""
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        length_function=len,
+    )
+    texts, metadatas = [], []
+    for f in files:
+        chunks = splitter.split_text(f["content"])
+        for chunk in chunks:
+            texts.append(chunk)
+            metadatas.append({
+                "filename": f["filename"],
+                "filepath": f["path"],
+                "language": f["language"],
+            })
+
+    embeddings = get_embeddings()
+    vectorstore = FAISS.from_texts(texts, embeddings, metadatas=metadatas)
+    return vectorstore
+
+
+def retrieve_context(query: str, vectorstore) -> tuple[str, list[str]]:
+    """Retrieve top-K chunks and return formatted context + source filenames."""
+    docs = vectorstore.similarity_search(query, k=TOP_K)
+    context_parts = []
+    sources = []
+    for doc in docs:
+        fp = doc.metadata.get("filepath", "unknown")
+        lang = doc.metadata.get("language", "")
+        context_parts.append(f"### File: {fp} ({lang})\n```\n{doc.page_content}\n```")
+        if fp not in sources:
+            sources.append(fp)
+    return "\n\n".join(context_parts), sources
+
+
+# ──────────────────────────────────────────────
+# Groq chat
+# ──────────────────────────────────────────────
+
+def ask_groq(query: str, context: str) -> str:
+    """Send query + retrieved context to Groq and return the response."""
+    if not GROQ_API_KEY:
+        return "Groq API key not found. Please add GROQ_API_KEY to your .env file."
+
+    user_message = (
+        f"Code context:\n{context}\n\n"
+        f"User question: {query}"
+    )
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        completion = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.4,
+            max_tokens=1024,
+        )
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Groq API error: {e}"
+
+
+# ──────────────────────────────────────────────
+# UI helpers
+# ──────────────────────────────────────────────
+
+def render_summary_card(summary: str, meta: dict):
+    tech_badges = "".join(f'<span class="tech-badge">{t}</span>' for t in meta.get("tech_stack", []))
+
+    complexity_cls = f"complexity-{meta.get('complexity', 'small').lower()}"
+    complexity_val = meta.get("complexity", "Unknown")
+
+    dirs_html = " ".join(
+        f'<span class="tech-badge" style="color:var(--text-secondary);background:var(--bg-tertiary);border-color:var(--border-color);">{d}/</span>'
+        for d in meta.get("top_dirs", [])[:12]
+    ) if meta.get("top_dirs") else '<span style="color:var(--text-muted);font-style:italic;">Flat structure</span>'
+
+    entry_html = (
+        f'<code style="color:var(--accent);background:var(--accent-subtle);padding:2px 8px;border-radius:4px;font-size:0.88em;">{meta["entry_point"]}</code>'
+        if meta.get("entry_point")
+        else '<span style="color:var(--text-muted);font-style:italic;">Not detected</span>'
+    )
+
+    html = f"""
+    <div class="summary-card">
+        <div class="card-header">
+            {ICONS['summary']}
+            <span class="card-title">Repository Analysis</span>
+        </div>
+        <div class="card-body">{summary}</div>
+        <hr class="subtle-divider">
+        <div class="meta-grid">
+            <div class="meta-item">
