@@ -848,3 +848,103 @@ def render_summary_card(summary: str, meta: dict):
         <hr class="subtle-divider">
         <div class="meta-grid">
             <div class="meta-item">
+                <div class="meta-label">Tech Stack</div>
+                <div class="meta-value">{tech_badges}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Directories</div>
+                <div class="meta-value">{dirs_html}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Complexity</div>
+                <div class="meta-value">
+                    <span class="{complexity_cls}">{complexity_val}</span>
+                    <span style="color:var(--text-muted);font-size:0.85em;margin-left:8px;">{meta.get('file_count', 0)} files indexed</span>
+                </div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Entry Point</div>
+                <div class="meta-value">{entry_html}</div>
+            </div>
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_source_chips(sources: list[str]):
+    chips = "".join(
+        f'<span class="source-chip">{ICONS["hash"]} {PurePosixPath(s).name}</span>'
+        for s in sources
+    )
+    st.markdown(
+        f'<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);">'
+        f'<span style="color:var(--text-muted);font-size:0.7em;text-transform:uppercase;letter-spacing:0.06em;margin-right:6px;">Sources</span>'
+        f'{chips}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ──────────────────────────────────────────────
+# Sidebar
+# ──────────────────────────────────────────────
+
+with st.sidebar:
+    st.markdown(
+        f"""
+        <div class="sidebar-brand">
+            {ICONS['logo']}
+            <div>
+                <div class="brand-name">CodeWhisper</div>
+                <div class="brand-sub">Repository Intelligence</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+
+    repo_url = st.text_input(
+        "Repository URL",
+        placeholder="https://github.com/owner/repo",
+        key="repo_url_input",
+    )
+
+    col_load, col_clear = st.columns(2)
+    with col_load:
+        load_btn = st.button("Load Repo", use_container_width=True)
+    with col_clear:
+        clear_btn = st.button("Clear", use_container_width=True)
+
+    if clear_btn:
+        for k in ["files", "repo_meta", "summary", "vectorstore", "chat_history", "repo_loaded", "loading"]:
+            if k in st.session_state:
+                del st.session_state[k]
+        st.rerun()
+
+    # Show stats when repo loaded
+    if st.session_state.get("repo_loaded") and st.session_state.get("repo_meta"):
+        meta = st.session_state["repo_meta"]
+        st.markdown("---")
+        st.markdown(
+            f"""
+            <div class="stat-box">
+                <div class="stat-number">{meta['file_count']}</div>
+                <div class="stat-label">Files Indexed</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        langs = meta.get("languages", {})
+        if langs:
+            st.markdown(
+                f'<div style="margin-top:12px;margin-bottom:8px;">'
+                f'<span style="color:var(--text-muted);font-size:0.72em;text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">Languages Detected</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            for lang, count in langs.items():
+                st.markdown(
+                    f'<div class="lang-item">'
