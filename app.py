@@ -648,3 +648,103 @@ def analyse_repo(files: list) -> dict:
                     if "vite" in dl:
                         tech_stack.add("Vite")
                     if "angular" in dl:
+                        tech_stack.add("Angular")
+                    if "svelte" in dl:
+                        tech_stack.add("Svelte")
+                    if "fastapi" in dl:
+                        tech_stack.add("FastAPI")
+            except (json.JSONDecodeError, AttributeError):
+                pass
+        if f["filename"] == "requirements.txt":
+            lines = f["content"].lower().splitlines()
+            for line in lines:
+                if "django" in line:
+                    tech_stack.add("Django")
+                if "flask" in line:
+                    tech_stack.add("Flask")
+                if "fastapi" in line:
+                    tech_stack.add("FastAPI")
+                if "streamlit" in line:
+                    tech_stack.add("Streamlit")
+                if "tensorflow" in line or "torch" in line:
+                    tech_stack.add("ML/AI")
+
+    # Detect entry points
+    entry_point = None
+    entry_candidates = [
+        "main.py", "app.py", "index.py", "manage.py",
+        "index.js", "index.ts", "main.js", "main.ts",
+        "index.html", "App.jsx", "App.tsx",
+    ]
+    for ec in entry_candidates:
+        for f in files:
+            if f["filename"] == ec:
+                entry_point = f["path"]
+                break
+        if entry_point:
+            break
+
+    # Complexity
+    fc = len(files)
+    if fc <= 10:
+        complexity = "Small"
+    elif fc <= 30:
+        complexity = "Medium"
+    else:
+        complexity = "Large"
+
+    return {
+        "file_count": fc,
+        "languages": dict(lang_counter.most_common()),
+        "tech_stack": sorted(tech_stack),
+        "top_dirs": top_dirs,
+        "root_files": root_files,
+        "entry_point": entry_point,
+        "complexity": complexity,
+    }
+
+
+def generate_summary(files: list, meta: dict) -> str:
+    """Use Groq LLM to generate a concise project summary."""
+    filenames = [f["path"] for f in files]
+    readme_content = ""
+    for f in files:
+        if f["filename"].lower().startswith("readme"):
+            readme_content = f["content"][:2000]
+            break
+
+    prompt = (
+        "Given the following information about a GitHub repository, write a 2-3 sentence summary of what this project does.\n\n"
+        f"Files ({len(filenames)}): {', '.join(filenames[:40])}\n"
+        f"Tech stack: {', '.join(meta['tech_stack'])}\n"
+        f"Entry point: {meta.get('entry_point', 'unknown')}\n"
+    )
+    if readme_content:
+        prompt += f"\nREADME excerpt:\n{readme_content}\n"
+    prompt += "\nProvide only the summary, no headings or bullet points."
+
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        completion = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": "You are a concise technical writer."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=200,
+        )
+        return completion.choices[0].message.content.strip()
+    except Exception:
+        return "Summary generation unavailable. Please check your Groq API key."
+
+
+# ──────────────────────────────────────────────
+# RAG pipeline
+# ──────────────────────────────────────────────
+
+@st.cache_resource(show_spinner=False)
+def get_embeddings():
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
