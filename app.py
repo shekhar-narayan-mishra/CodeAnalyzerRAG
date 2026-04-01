@@ -948,3 +948,103 @@ with st.sidebar:
             for lang, count in langs.items():
                 st.markdown(
                     f'<div class="lang-item">'
+                    f'<span class="lang-name">{lang}</span>'
+                    f'<span class="lang-count">{count}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+    st.markdown("---")
+    st.markdown(
+        '<p class="sidebar-footer">Streamlit / LangChain / FAISS / Groq</p>',
+        unsafe_allow_html=True,
+    )
+
+# ──────────────────────────────────────────────
+# Repo loading logic
+# ──────────────────────────────────────────────
+
+if load_btn and repo_url:
+    parsed = parse_repo_url(repo_url)
+    if not parsed:
+        st.error("Invalid GitHub URL. Please use a format like https://github.com/owner/repo")
+    else:
+        owner, repo = parsed
+        try:
+            with st.spinner("Connecting to GitHub..."):
+                files = fetch_repo_files(owner, repo)
+
+            st.session_state["files"] = files
+            meta = analyse_repo(files)
+            st.session_state["repo_meta"] = meta
+
+            with st.spinner("Generating repository summary..."):
+                summary = generate_summary(files, meta)
+            st.session_state["summary"] = summary
+
+            with st.spinner("Building vector index (this may take a moment on first run)..."):
+                vs = build_vectorstore(files)
+            st.session_state["vectorstore"] = vs
+            st.session_state["repo_loaded"] = True
+            st.session_state["chat_history"] = []
+            st.rerun()
+
+        except ValueError as e:
+            st.error(str(e))
+        except requests.ConnectionError:
+            st.error("Network error — could not reach GitHub. Check your internet connection.")
+        except Exception as e:
+            st.error(f"Unexpected error: {e}")
+
+
+# ──────────────────────────────────────────────
+# Main content area
+# ──────────────────────────────────────────────
+
+st.markdown(
+    f"""
+    <div class="title-area">
+        <div class="title-row">
+            {ICONS['terminal']}
+            <h1>CodeWhisper</h1>
+        </div>
+        <div class="subtitle">RAG-powered repository analysis and chat</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+if not st.session_state.get("repo_loaded"):
+    st.markdown('<hr class="subtle-divider">', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="welcome-state">
+            <div class="welcome-icon">{ICONS['search']}</div>
+            <div class="welcome-title">Paste a public GitHub repository URL in the sidebar to get started</div>
+            <div class="welcome-sub">
+                CodeWhisper will fetch the source code, build a searchable vector index,
+                and let you chat with the entire codebase using AI-powered retrieval.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
+
+# ── Summary card ──
+render_summary_card(st.session_state["summary"], st.session_state["repo_meta"])
+
+# ── Quick action buttons ──
+st.markdown(
+    f"""
+    <div class="section-header">
+        {ICONS['zap']}
+        <span class="section-title">Quick Actions</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+qa_cols = st.columns(4)
+quick_prompts = [
+    ("Explain Repo", "Explain this repo to a beginner in simple terms. What does it do, what are the main files, and how is it structured?"),
