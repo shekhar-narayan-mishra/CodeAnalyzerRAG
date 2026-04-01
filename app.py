@@ -1048,3 +1048,53 @@ st.markdown(
 qa_cols = st.columns(4)
 quick_prompts = [
     ("Explain Repo", "Explain this repo to a beginner in simple terms. What does it do, what are the main files, and how is it structured?"),
+    ("Auth Flow", "How does authentication work in this codebase? Describe the auth flow, mention relevant files and middleware."),
+    ("Folder Structure", "What is the folder structure logic? Explain the purpose of each major directory and how the project is organized."),
+    ("Core Functions", "What are the core functions and components in this codebase? List the most important ones and describe what they do."),
+]
+
+for col, (label, prompt) in zip(qa_cols, quick_prompts):
+    with col:
+        if st.button(label, use_container_width=True, key=f"qa_{label}"):
+            st.session_state["_pending_query"] = prompt
+
+# ── Chat history display ──
+st.markdown('<hr class="subtle-divider">', unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <div class="section-header">
+        {ICONS['message']}
+        <span class="section-title">Chat</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+for msg in st.session_state["chat_history"]:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+        if msg["role"] == "assistant" and msg.get("sources"):
+            render_source_chips(msg["sources"])
+
+# ── Handle pending quick-action query ──
+pending = st.session_state.pop("_pending_query", None)
+
+# ── Chat input ──
+user_input = st.chat_input("Ask anything about the codebase...")
+
+query = pending or user_input
+
+if query:
+    # Show user message
+    with st.chat_message("user"):
+        st.markdown(query)
+    st.session_state["chat_history"].append({"role": "user", "content": query})
+
+    # Retrieve & answer
+    vs = st.session_state["vectorstore"]
+    context, sources = retrieve_context(query, vs)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Analyzing codebase..."):
+            answer = ask_groq(query, context)
+        # Simulate streaming output
