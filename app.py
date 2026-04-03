@@ -1098,3 +1098,18 @@ if query:
         with st.spinner("Analyzing codebase..."):
             answer = ask_groq(query, context)
         # Simulate streaming output
+        placeholder = st.empty()
+        displayed = ""
+        for i, char in enumerate(answer):
+            displayed += char
+            if i % 3 == 0 or i == len(answer) - 1:
+                placeholder.markdown(displayed + "▌")
+                time.sleep(0.008)
+        placeholder.markdown(answer)
+        render_source_chips(sources)
+
+    st.session_state["chat_history"].append({
+        "role": "assistant",
+        "content": answer,
+        "sources": sources,
+    })
