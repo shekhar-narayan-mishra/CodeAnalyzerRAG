@@ -1,4 +1,4 @@
-# 🔮 CodeWhisper
+#  CodeWhisper
 
 **RAG-powered GitHub Repository Chat & Summarization Tool**
 
@@ -18,14 +18,8 @@ CodeWhisper lets you paste any public GitHub repo URL and instantly chat with th
 
 ---
 
-## 📸 Screenshot
 
-<!-- Replace with an actual screenshot -->
-![CodeWhisper Screenshot](screenshot.png)
-
----
-
-## 🚀 Setup
+##  Setup
 
 ### 1. Clone the repository
 
@@ -89,7 +83,7 @@ The app will open at `http://localhost:8501`.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 codewhisper/
@@ -102,7 +96,7 @@ codewhisper/
 
 ---
 
-## ⚠️ Notes
+## Notes
 
 - **Public repos only** — Private repos require authentication tokens (not supported in this version)
 - **GitHub rate limits** — Unauthenticated API requests are limited to 60/hour. The app will display a clear message if you hit the limit
