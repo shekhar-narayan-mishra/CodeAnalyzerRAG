@@ -26,7 +26,16 @@ from langchain_huggingface import HuggingFaceEmbeddings
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(_env_path)
 
+# Try getting the key from the system environment first (local testing)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
+# Fallback to Streamlit secrets (for Streamlit Community Cloud)
+if not GROQ_API_KEY:
+    try:
+        GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    except Exception:
+        pass
+
 GROQ_MODEL = "llama-3.1-8b-instant"
 
 ALLOWED_EXTENSIONS = {
