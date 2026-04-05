@@ -105,22 +105,22 @@ CUSTOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg-primary: #0d1117;
-    --bg-secondary: #161b22;
-    --bg-tertiary: #21262d;
-    --bg-card: rgba(22, 27, 34, 0.85);
-    --border-color: #30363d;
-    --border-subtle: #21262d;
-    --text-primary: #e6edf3;
-    --text-secondary: #8b949e;
-    --text-muted: #484f58;
-    --accent: #58a6ff;
-    --accent-muted: #1f6feb;
-    --accent-subtle: rgba(56, 139, 253, 0.1);
-    --green: #3fb950;
-    --orange: #d29922;
-    --red: #f85149;
-    --purple: #bc8cff;
+    --bg-primary: #0a0e0c;
+    --bg-secondary: #131b16;
+    --bg-tertiary: #1b261f;
+    --bg-card: rgba(19, 27, 22, 0.85);
+    --border-color: #24352a;
+    --border-subtle: #1b261f;
+    --text-primary: #eaf5ec;
+    --text-secondary: #90a597;
+    --text-muted: #647a6d;
+    --accent: #05d96f;
+    --accent-muted: #03a855;
+    --accent-subtle: rgba(5, 217, 111, 0.12);
+    --green: #05d96f;
+    --orange: #eab308;
+    --red: #ef4444;
+    --purple: #06b6d4;
 }
 
 html, body, [class*="css"], .stMarkdown, .stText, p, span, li, a {
@@ -130,6 +130,11 @@ html, body, [class*="css"], .stMarkdown, .stText, p, span, li, a {
 
 .stApp {
     background-color: var(--bg-primary);
+}
+
+/* Hide Streamlit "Press Enter to apply" hint */
+div[data-testid="InputInstructions"] {
+    display: none !important;
 }
 
 /* Sidebar */
