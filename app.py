@@ -947,6 +947,60 @@ with st.sidebar:
                 del st.session_state[k]
         st.rerun()
 
+    st.markdown(
+        f'<div style="margin-top:24px;margin-bottom:8px;">'
+        f'<span style="color:var(--text-secondary);font-size:0.82em;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">SAMPLE REPOSITORIES</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    sample_url = "https://github.com/shekhar-narayan-mishra/CodeAnalyzerRAG"
+    
+    st.components.v1.html(
+        f"""
+        <style>
+        body {{ margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }}
+        button {{
+            width: 100%;
+            background-color: #161b22;
+            color: #f0f6fc;
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-sizing: border-box;
+        }}
+        button:hover {{
+            background-color: #1e834b;
+            border-color: #2eac68;
+            color: #ffffff;
+        }}
+        button:active {{
+            transform: translateY(1px);
+        }}
+        </style>
+        <button onclick="copyToClipboard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span id="btnText">Copy Sample URL</span>
+        </button>
+        <script>
+        function copyToClipboard() {{
+            navigator.clipboard.writeText('{sample_url}');
+            document.getElementById('btnText').innerText = 'Copied to Clipboard!';
+            setTimeout(() => {{
+                document.getElementById('btnText').innerText = 'Copy Sample URL';
+            }}, 2000);
+        }}
+        </script>
+        """,
+        height=40
+    )
     # Show stats when repo loaded
     if st.session_state.get("repo_loaded") and st.session_state.get("repo_meta"):
         meta = st.session_state["repo_meta"]
