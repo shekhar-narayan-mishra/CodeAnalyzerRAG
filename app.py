@@ -12,6 +12,7 @@ from pathlib import PurePosixPath
 from collections import Counter, defaultdict
 
 import requests
+import base64
 import streamlit as st
 from dotenv import load_dotenv
 from groq import Groq
@@ -95,6 +96,12 @@ ICONS = {
     "search": '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#30363d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
 }
 
+def _get_svg_url(svg_str):
+    b64 = base64.b64encode(svg_str.encode("utf-8")).decode("utf-8")
+    return f"data:image/svg+xml;base64,{b64}"
+
+BOT_AVATAR = _get_svg_url('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2eac68" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>')
+USER_AVATAR = _get_svg_url('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>')
 
 # ──────────────────────────────────────────────
 # Page configuration & CSS
@@ -575,9 +582,51 @@ def _priority_key(path: str) -> int:
 
 def fetch_repo_files(owner: str, repo: str):
     """
-    Fetch file list from GitHub using the Git Trees API (recursive).
-    Returns list of dicts: {path, content, size, language}.
+    Fetch file list from GitHub using the Git Trees API (recursive)
+    or from the local filesystem for the sample repo to bypass rate limits.
     """
+    if owner == "shekhar-narayan-mishra" and repo.lower() == "codeanalyzerrag":
+        files = []
+        progress_bar = st.progress(0, text="Reading local repository files...")
+        
+        candidates = []
+        for root, dirs, filenames in os.walk("."):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.startswith(".")]
+            for name in filenames:
+                path = os.path.relpath(os.path.join(root, name), ".")
+                if _should_include(path):
+                    full_path = os.path.join(root, name)
+                    content = ""
+                    try:
+                        with open(full_path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                    except UnicodeDecodeError:
+                        continue
+                        
+                    if len(content) <= MAX_FILE_SIZE:
+                        candidates.append({
+                            "path": path,
+                            "filename": name,
+                            "content": content,
+                            "size": len(content),
+                        })
+
+        candidates.sort(key=lambda n: _priority_key(n["path"]))
+        candidates = candidates[:MAX_FILES]
+
+        total = len(candidates)
+        for idx, node in enumerate(candidates):
+            ext = PurePosixPath(node["path"]).suffix.lower()
+            node["language"] = EXT_TO_LANG.get(ext, "Unknown")
+            files.append(node)
+            progress_bar.progress((idx + 1) / (total or 1), text=f"Processing {node['path']}")
+
+        progress_bar.empty()
+        if not files:
+            raise ValueError("No supported source files found in local repository.")
+        return files
+
+    # Fallback to standard GitHub API fetching
     tree_url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/HEAD?recursive=1"
     headers = {"Accept": "application/vnd.github.v3+json"}
     if GITHUB_TOKEN:
@@ -599,7 +648,6 @@ def fetch_repo_files(owner: str, repo: str):
 
     tree = resp.json().get("tree", [])
 
-    # Filter blobs matching our criteria
     candidates = [
         node for node in tree
         if node["type"] == "blob"
@@ -607,7 +655,6 @@ def fetch_repo_files(owner: str, repo: str):
         and node.get("size", 0) <= MAX_FILE_SIZE
     ]
 
-    # Sort by priority and cap
     candidates.sort(key=lambda n: _priority_key(n["path"]))
     candidates = candidates[:MAX_FILES]
 
@@ -1149,7 +1196,8 @@ st.markdown(
 )
 
 for msg in st.session_state["chat_history"]:
-    with st.chat_message(msg["role"]):
+    msg_avatar = USER_AVATAR if msg["role"] == "user" else BOT_AVATAR
+    with st.chat_message(msg["role"], avatar=msg_avatar):
         st.markdown(msg["content"])
         if msg["role"] == "assistant" and msg.get("sources"):
             render_source_chips(msg["sources"])
@@ -1164,7 +1212,7 @@ query = pending or user_input
 
 if query:
     # Show user message
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(query)
     st.session_state["chat_history"].append({"role": "user", "content": query})
 
@@ -1172,7 +1220,7 @@ if query:
     vs = st.session_state["vectorstore"]
     context, sources = retrieve_context(query, vs)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=BOT_AVATAR):
         with st.spinner("Analyzing codebase..."):
             answer = ask_groq(query, context)
         # Simulate streaming output
